@@ -26,7 +26,7 @@ public class CurrencyService
     {
         System.out.println("key is >>> " + apiKey);
         // Build the URL with the injected API key
-        String url = String.format("%s/countries?apiKey=%s", Url.apiUrl, apiKey);
+        String url = String.format("%s/countries?apiKey=%s", Url.apiBaseUrl, apiKey);
 
         // Make the HTTP GET request
         RestTemplate restTemplate = new RestTemplate();
@@ -76,7 +76,12 @@ public class CurrencyService
 
         results.keySet().forEach(countryCode -> {
             JsonObject country = results.getJsonObject(countryCode);
-            currencies.put(countryCode, country.getString("currencyName"));
+
+            // Get the id like sgd etc
+            String currencyId = country.getString("currencyId");
+
+            // store the currencyId as key and currecyName as value
+            currencies.put(currencyId, country.getString("currencyName"));
         });
 
         // 1. JsonObject results = jResponse.getJsonObject("results");
@@ -123,5 +128,33 @@ public class CurrencyService
     {
         return currencies;
     }
+
+    public double convertCurrency (String fromCurrency, String toCurrency, double amount)
+    {
+        String key = fromCurrency + "_" + toCurrency;
+
+        // Construct API URL
+        String url = Url.apiConvertUrl.replace("{key}", key).replace("{apiKey}", apiKey); // apiKey from @Value
+
+        System.out.println("Calling API: " + url);
+
+         // Call external API
+         RestTemplate restTemplate = new RestTemplate();
+         Map<String, Double> response = restTemplate.getForObject(url, Map.class);
+ 
+
+         // The response we trying to get is, rate
+        // {
+        //      "XCD_AFN": 25.461392
+        // }
+
+        // Get the conversion rate and calculate the result
+
+        double rate = response.get(key); // key is the XCD_AFN
+        double conversion = rate * amount; // Calculate converted amount
+
+         return conversion;
+     }
+    
 
 }
